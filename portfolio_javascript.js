@@ -310,6 +310,20 @@ function getCaptionFromIndex(captions, index) {
  * videos in close proximity to the viewport's center automatically replay from the start.
  * -------------------------------------------------------------------------*/
 
+  function restartVideoInClosestBlock(closestBlock) {
+  if (closestBlock !== lastClosestBlock) {
+    var closestVideo = $(closestBlock).find('video.inside-media').first();
+    if (closestVideo.length > 0) {
+      closestVideo.get(0).currentTime = 0;
+      closestVideo.get(0).play();
+    }
+    lastClosestBlock = closestBlock; // Update lastClosestBlock to the current closest block
+  }
+}
+  
+
+
+
   
 /* --------------------------------------------------------------------------
  * Resets the closest media block to its initial state when it becomes the primary focus again.
