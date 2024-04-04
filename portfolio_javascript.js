@@ -347,49 +347,80 @@ function restartVideoInClosestBlock(closestBlock) {
  * --------------------------------------------------------------------------*/
  
   
-function setupMediaItemClickHandler(block) {
-  var clickSound = new Audio('https://portfoliofiles.preetdalal.com/ui%20click.wav'); // Adjust the path as necessary
 
+
+/*-------------------------------------------------------------------------
+* Initializes click event handling for media blocks to allow switching between
+* media items. It incorporates feedback mechanisms and updates the media
+* display and caption in response to user interactions.
+* -------------------------------------------------------------------------*/
+
+function setupMediaItemClickHandler(block) {
+  // Check if there's more than one media item; if not, no need to setup click handling
+  var mediaURLsHtml = $(block).find(".media-urls").html();
+  if (!mediaURLsHtml || mediaURLsHtml.split("<br><br>").length <= 1) {
+    return; // Early return for single-item blocks
+  }
+
+  $(block).data('current-media', 0).on('click', function() {
+    playClickFeedback(); // Plays sound and triggers vibration
+    switchToNextMediaItem(block); // Switches to the next media item and updates the caption
+  });
+}
+
+
+
+
+
+/*-------------------------------------------------------------------------
+* Plays a click sound and triggers a vibration to provide tactile feedback
+* on media item click, enhancing the user interaction experience.
+* -------------------------------------------------------------------------*/
+
+function playClickFeedback() {
+  var clickSound = new Audio('https://portfoliofiles.preetdalal.com/ui%20click.wav');
+  clickSound.play();
+  
+  if (navigator.vibrate) {
+    navigator.vibrate(10); // Vibrate for 10 milliseconds
+  }
+}
+
+
+
+
+
+/*-------------------------------------------------------------------------
+* Switches to the next media item within a block, handling the update of
+* both the visual media element and the corresponding caption.
+* -------------------------------------------------------------------------*/
+
+function switchToNextMediaItem(block) {
   var mediaURLsHtml = $(block).find(".media-urls").html();
   var mediaCaptionsHtml = $(block).find(".media-captions").html();
   var mediaURLs = mediaURLsHtml ? mediaURLsHtml.split("<br><br>") : [];
   var mediaCaptions = mediaCaptionsHtml ? mediaCaptionsHtml.split("<br><br>") : [];
+  var currentMediaIndex = $(block).data('current-media');
+  var nextMediaIndex = (currentMediaIndex + 1) % mediaURLs.length;
 
-  // Check if there's only one media item; if so, no need to setup click handling for transitions
-  if (mediaURLs.length <= 1) {
-    return; // Early return to prevent setting up click handlers for single-item blocks
+  $(block).data('current-media', nextMediaIndex);
+  $(block).data('current-caption', nextMediaIndex);
+
+  var currentMediaElement = $(block).find('.inside-media').eq(currentMediaIndex);
+  hideMediaElement(currentMediaElement);
+
+  var nextMediaElement = $(block).find('.inside-media').eq(nextMediaIndex);
+  showMediaElement(nextMediaElement);
+
+  if(nextMediaElement.is('video')) {
+    nextMediaElement.get(0).play().catch(e => console.error("Attempt to play the next video failed: ", e));
   }
-
-  $(block).data('current-media', 0).on('click', function() {
-    clickSound.play(); // Play the click sound effect
-
-    // Trigger a small vibration for tactile feedback on mobile devices
-    if (navigator.vibrate) {
-        navigator.vibrate(10); // Vibrate for 10 milliseconds
-    }
-
-    var currentMediaIndex = $(this).data('current-media');
-    var nextMediaIndex = (currentMediaIndex + 1) % mediaURLs.length;
-    $(this).data('current-media', nextMediaIndex);
-    $(this).data('current-caption', nextMediaIndex);
-
-    var currentMediaElement = $(this).find('.inside-media').eq(currentMediaIndex);
-    hideMediaElement(currentMediaElement);
-
-    var nextMediaElement = $(this).find('.inside-media').eq(nextMediaIndex);
-    showMediaElement(nextMediaElement);
-
-    if(nextMediaElement.is('video')) {
-      nextMediaElement.get(0).play().catch(e => console.error("Attempt to play the next video failed: ", e));
-    }
-
-    var newCaption = mediaCaptions[nextMediaIndex] ? mediaCaptions[nextMediaIndex].trim() : "";
-    updateCaption(block, newCaption);
-    
-    // Update the media movement to adjust for the size of the new media item
-    updateMediaMovement(block);
-  });
+  
+  updateCaption(block, mediaCaptions[nextMediaIndex] ? mediaCaptions[nextMediaIndex].trim() : "");
 }
+
+
+
   
   
   
