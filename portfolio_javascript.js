@@ -1,4 +1,6 @@
   
+
+
 /* --------------------------------------------------------------------------
  * Initializing any needed variables
  * --------------------------------------------------------------------------*/
@@ -23,6 +25,10 @@ $(document).ready(function() {
   initialize();
 });
   
+$(document).ready(function() {
+    setupContainerClickHandler();
+});
+
   
   
 
@@ -94,7 +100,6 @@ function initializeMediaBlocks() {
   $(".media-block").each(function(index, block) {
     setupFirstMediaItem(block);
     setupSubsequentMediaItems(block);
-    setupMediaItemClickHandler(block);
   });
 }
 
@@ -340,13 +345,6 @@ function restartVideoInClosestBlock(closestBlock) {
   
   
   
- /* --------------------------------------------------------------------------
- * Sets up click event handling for media blocks to enable switching between 
- * media items. This includes showing the next media item and attempting to play 
- * it if it's a video.
- * --------------------------------------------------------------------------*/
- 
-  
 
 
 /*-------------------------------------------------------------------------
@@ -355,18 +353,24 @@ function restartVideoInClosestBlock(closestBlock) {
 * display and caption in response to user interactions.
 * -------------------------------------------------------------------------*/
 
-function setupMediaItemClickHandler(block) {
-  // Check if there's more than one media item; if not, no need to setup click handling
-  var mediaURLsHtml = $(block).find(".media-urls").html();
-  if (!mediaURLsHtml || mediaURLsHtml.split("<br><br>").length <= 1) {
-    return; // Early return for single-item blocks
-  }
+function setupContainerClickHandler() {
+console.log('setupContainerClickHandler called'); // To check if the function is called
+    $('.content-container').on('click', function() {
+	        console.log('Content container clicked'); // To check if the click event is registered
 
-  $(block).data('current-media', 0).on('click', function() {
-    playClickFeedback(); // Plays sound and triggers vibration
-    switchToNextMediaItem(block); // Switches to the next media item and updates the caption
-  });
+        var closestBlock = findClosestMediaBlock();
+        console.log('Closest block found:', closestBlock); // To see which block is identified as closest
+
+        if (closestBlock) {
+            switchToNextMediaItem($(closestBlock));
+            playClickFeedback(); 
+        }
+    });
 }
+
+
+
+
 
 
 
@@ -396,6 +400,8 @@ function playClickFeedback() {
 * -------------------------------------------------------------------------*/
 
 function switchToNextMediaItem(block) {
+    console.log('called function to switching to next media item for block:', block); // Confirm the function is called
+
   var mediaURLsHtml = $(block).find(".media-urls").html();
   var mediaCaptionsHtml = $(block).find(".media-captions").html();
   var mediaURLs = mediaURLsHtml ? mediaURLsHtml.split("<br><br>") : [];
@@ -432,6 +438,8 @@ function switchToNextMediaItem(block) {
   
   
 function findClosestMediaBlock() {
+    console.log('findclosestmediablock called'); //cnsole
+
     var scrollPos = $(window).scrollTop();
     var viewportCenter = $(window).height() / 2 + scrollPos;
 
@@ -442,12 +450,14 @@ function findClosestMediaBlock() {
         var elementCenter = $(this).offset().top + $(this).outerHeight() / 2;
         var diff = Math.abs(elementCenter - viewportCenter);
 
+
         if (diff < closestDiff) {
             closestDiff = diff;
             closestBlock = this;
         }
     });
 
+    console.log('The closest block is:', closestBlock); // Final closest block
     return closestBlock;
 }
 
