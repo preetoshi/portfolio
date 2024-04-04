@@ -1,4 +1,4 @@
-
+  
 /* --------------------------------------------------------------------------
  * Initializing any needed variables
  * --------------------------------------------------------------------------*/
@@ -305,34 +305,11 @@ function getCaptionFromIndex(captions, index) {
   
   
 /* --------------------------------------------------------------------------
- * Restarts the video within the closest media block if it has changed since the last check.
- * This function is called during scrolling or when the media changes, ensuring that
- * videos in close proximity to the viewport's center automatically replay from the start.
- * -------------------------------------------------------------------------*/
-
-  function restartVideoInClosestBlock(closestBlock) {
-  if (closestBlock !== lastClosestBlock) {
-    var closestVideo = $(closestBlock).find('video.inside-media').first();
-    if (closestVideo.length > 0) {
-      closestVideo.get(0).currentTime = 0;
-      closestVideo.get(0).play();
-    }
-    lastClosestBlock = closestBlock; // Update lastClosestBlock to the current closest block
-  }
-}
-  
-
-
-
-  
-/* --------------------------------------------------------------------------
  * Resets the closest media block to its initial state when it becomes the primary focus again.
  * This includes restarting the video from the beginning, showing the first media item,
  * and displaying the first caption. It ensures a fresh view experience for returning viewers.
  * -------------------------------------------------------------------------*/
-
-  
-  function restartVideoInClosestBlock(closestBlock) {
+function restartVideoInClosestBlock(closestBlock) {
   if (closestBlock !== lastClosestBlock) {
     // Reset current media item and caption indices to the first item
     $(closestBlock).data('current-media', 0);
@@ -386,6 +363,11 @@ function setupMediaItemClickHandler(block) {
   $(block).data('current-media', 0).on('click', function() {
     clickSound.play(); // Play the click sound effect
 
+    // Trigger a small vibration for tactile feedback on mobile devices
+    if (navigator.vibrate) {
+        navigator.vibrate(10); // Vibrate for 10 milliseconds
+    }
+
     var currentMediaIndex = $(this).data('current-media');
     var nextMediaIndex = (currentMediaIndex + 1) % mediaURLs.length;
     $(this).data('current-media', nextMediaIndex);
@@ -403,9 +385,11 @@ function setupMediaItemClickHandler(block) {
 
     var newCaption = mediaCaptions[nextMediaIndex] ? mediaCaptions[nextMediaIndex].trim() : "";
     updateCaption(block, newCaption);
+    
+    // Update the media movement to adjust for the size of the new media item
+    updateMediaMovement(block);
   });
 }
-  
   
   
   
@@ -550,9 +534,7 @@ function initHLS(videoElement, src) {
 }
 
 
-  
-  
-  
+
 /*-------------------------------------------------------------------------
  * On click of Email button, copies to clipboard and plays fun sound
  * -------------------------------------------------------------------------*/  
@@ -585,3 +567,105 @@ document.addEventListener('DOMContentLoaded', (event) => {
         });
     });
 });
+  
+  
+  
+  
+
+/*-------------------------------------------------------------------------
+* Creates an overlay modal that when clicked, goes to full screen
+* -------------------------------------------------------------------------*/
+
+  
+document.addEventListener('DOMContentLoaded', function() {
+    var overlay = document.querySelector('.mobile-overlay'); // Select the overlay by class
+
+    // Function to open full screen mode
+    function openFullscreen(elem) {
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) { /* Safari */
+            elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) { /* IE11 */
+            elem.msRequestFullscreen();
+        }
+    }
+
+    // Listen for a click on the overlay to trigger full screen and hide the overlay
+    overlay.addEventListener('click', function() {
+        openFullscreen(document.documentElement); // Request full screen for the entire document
+        this.style.display = 'none'; // Hide the overlay
+    });
+
+    // Detect when leaving full screen mode and show the overlay again
+    document.addEventListener('fullscreenchange', function () {
+        if (!document.fullscreenElement) {
+            overlay.style.display = 'flex'; // Show the overlay when exiting full screen
+        }
+    }, false);
+});
+
+
+  
+
+
+/*-----------------------------------------------------
+Begin bhaiType
+* ----------------------------------------------------*/
+
+
+// Enter strings, div to target, speed, and delay between lines 
+bhaiType([
+" ",
+" ",
+"Hey!",
+"I'm Preetoshi",
+"I like design that's ...",
+"minimal",
+"playful",
+"and mindfully made.",
+], "text-stream", 110, 1300)
+
+
+
+
+  
+  
+/*-----------------------------------------------------
+Bind mouse movements to mobile device tilt with accelerometer
+* ----------------------------------------------------*/
+
+function handleOrientation(event) {
+  var width = window.innerWidth;
+  var height = window.innerHeight;
+  var centerX = width / 2;
+  var centerY = height / 2;
+
+  var X_SENSITIVITY = 2;
+  var Y_SENSITIVITY = 4;
+  var X_OFFSET = 0;
+  var Y_OFFSET = -0.33; // Assuming a comfortable viewing angle of ~30 degrees as the 'neutral' position
+
+  // Adjust gamma and beta to set a 'neutral' orientation
+  var x = event.gamma; // No change needed for gamma, as holding the phone on its side is still considered neutral
+  var y = event.beta - 30; // Adjust beta by 30 degrees to set the neutral position
+
+  // Clamp x and y to ensure they don't go beyond the expected range
+  x = Math.max(-90, Math.min(90, x));
+  y = Math.max(-90, Math.min(90, y)); // Assuming the same range for y for simplicity
+
+  // Convert degrees to a value between 0 and width/height of the window
+  var clientX = centerX + (centerX * x / 90) * X_SENSITIVITY + X_OFFSET;
+  var clientY = centerY + (centerY * y / 90) * Y_SENSITIVITY + Y_OFFSET;
+
+  // Dispatch a new mousemove event with the calculated positions
+  document.dispatchEvent(new MouseEvent('mousemove', {
+    bubbles: true,
+    cancelable: true,
+    clientX: clientX,
+    clientY: clientY
+  }));
+}
+
+// Add the device orientation event listener
+window.addEventListener('deviceorientation', handleOrientation, true);
